@@ -326,6 +326,8 @@ class HonchoClientConfig:
     # Dialectic (peer.chat) settings
     # reasoning_level: "minimal" | "low" | "medium" | "high" | "max"
     dialectic_reasoning_level: str = "low"
+    # Min turns between automatic dialectic refreshes.
+    dialectic_cadence: int = 1
     # When true, the model can override reasoning_level per-call via the
     # honcho_reasoning tool param (agentic). When false, always uses
     # dialecticReasoningLevel and ignores model-provided overrides.
@@ -543,6 +545,11 @@ class HonchoClientConfig:
                 host_block.get("dialecticReasoningLevel")
                 or raw.get("dialecticReasoningLevel")
                 or "low"
+            ),
+            dialectic_cadence=_parse_int_config(
+                host_block.get("dialecticCadence"),
+                raw.get("dialecticCadence"),
+                default=1,
             ),
             dialectic_dynamic=_resolve_bool(
                 host_block.get("dialecticDynamic"),

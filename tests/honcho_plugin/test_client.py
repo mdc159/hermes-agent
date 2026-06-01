@@ -201,6 +201,17 @@ class TestFromGlobalConfig:
         config = HonchoClientConfig.from_global_config(config_path=config_file)
         assert config.context_tokens == 2000
 
+    def test_dialectic_cadence_host_block_wins(self, tmp_path):
+        """Host block dialecticCadence should override root/default cadence."""
+        config_file = tmp_path / "config.json"
+        config_file.write_text(json.dumps({
+            "apiKey": "key",
+            "dialecticCadence": 1,
+            "hosts": {"hermes": {"dialecticCadence": 2}},
+        }))
+        config = HonchoClientConfig.from_global_config(config_path=config_file)
+        assert config.dialectic_cadence == 2
+
     def test_recall_mode_from_config(self, tmp_path):
         """recallMode is read from config, host block wins."""
         config_file = tmp_path / "config.json"

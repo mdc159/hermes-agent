@@ -314,7 +314,7 @@ class HonchoMemoryProvider(MemoryProvider):
                 # (every turn) so existing honcho.json configs without the key
                 # behave as they did before. New setups via `hermes honcho setup`
                 # get dialecticCadence=2 written explicitly by the wizard.
-                self._dialectic_cadence = int(raw.get("dialecticCadence", 1))
+                self._dialectic_cadence = max(1, int(getattr(cfg, "dialectic_cadence", raw.get("dialecticCadence", 1))))
                 self._dialectic_depth = max(1, min(cfg.dialectic_depth, 3))
                 self._dialectic_depth_levels = cfg.dialectic_depth_levels
                 self._reasoning_heuristic = cfg.reasoning_heuristic

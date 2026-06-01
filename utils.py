@@ -117,7 +117,7 @@ def atomic_json_write(
         suffix=".tmp",
     )
     try:
-        if mode is not None:
+        if mode is not None and hasattr(os, "fchmod"):
             os.fchmod(fd, mode)
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(
@@ -129,6 +129,7 @@ def atomic_json_write(
             )
             f.flush()
             os.fsync(f.fileno())
+
         # Preserve symlinks — swap in-place on the real file (GitHub #16743).
         real_path = atomic_replace(tmp_path, path)
         if mode is not None:

@@ -27,6 +27,11 @@ if str(_REPO_ROOT) not in sys.path:
 
 from utils import atomic_json_write, atomic_replace, atomic_yaml_write
 
+_WINDOWS_SYMLINKS_REQUIRE_PRIVILEGE = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Symlinks require elevated privileges on Windows",
+)
+
 
 # ─── Direct helper ────────────────────────────────────────────────────────────
 
@@ -37,6 +42,7 @@ def _write_tmp(dir_: Path, content: str) -> Path:
     return tmp
 
 
+@_WINDOWS_SYMLINKS_REQUIRE_PRIVILEGE
 def test_atomic_replace_preserves_symlink(tmp_path: Path) -> None:
     real = tmp_path / "real.yaml"
     link = tmp_path / "link.yaml"
@@ -94,6 +100,7 @@ def test_atomic_replace_accepts_pathlike_and_str(tmp_path: Path) -> None:
 # ─── atomic_json_write / atomic_yaml_write wiring ──────────────────────────
 
 
+@_WINDOWS_SYMLINKS_REQUIRE_PRIVILEGE
 def test_atomic_json_write_preserves_symlink(tmp_path: Path) -> None:
     real = tmp_path / "real.json"
     link = tmp_path / "link.json"
@@ -107,6 +114,7 @@ def test_atomic_json_write_preserves_symlink(tmp_path: Path) -> None:
     assert loaded == {"hello": "world"}
 
 
+@_WINDOWS_SYMLINKS_REQUIRE_PRIVILEGE
 def test_atomic_yaml_write_preserves_symlink(tmp_path: Path) -> None:
     real = tmp_path / "real.yaml"
     link = tmp_path / "link.yaml"
@@ -138,9 +146,20 @@ def test_atomic_json_write_preserves_symlink_permissions(tmp_path: Path) -> None
     assert mode == 0o644, f"permissions drifted after symlinked write: {oct(mode)}"
 
 
+def test_atomic_json_write_mode_without_fchmod(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Writing an explicit mode should still work on platforms without os.fchmod."""
+    monkeypatch.delattr(os, "fchmod", raising=False)
+    target = tmp_path / "windows-compatible.json"
+
+    atomic_json_write(target, {"ok": True}, mode=0o600)
+
+    assert json.loads(target.read_text(encoding="utf-8")) == {"ok": True}
+
+
 # ─── Broken-symlink edge case ─────────────────────────────────────────────
 
 
+@_WINDOWS_SYMLINKS_REQUIRE_PRIVILEGE
 def test_atomic_replace_broken_symlink_creates_target(tmp_path: Path) -> None:
     """A symlink pointing at a missing file: the write should create the
     real target (resolving via realpath) rather than leaving the dangling
